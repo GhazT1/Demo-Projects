@@ -1,41 +1,58 @@
-# 🛒 NLP Product Review Ranking & Filtering Engine
+# E-commerce Intelligent Review Ranking & Quality Control System
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![ML-RandomForest](https://img.shields.io/badge/Model-Random%20Forest-green.svg)](https://scikit-learn.org/)
+### Executive Summary
+In the e-commerce landscape, high-quality User-Generated Content (UGC) is a primary driver of consumer trust. This project implements an automated end-to-end pipeline that filters out "noise"—including gibberish, profanity, and irrelevant language—and uses a **Random Forest Classifier** to rank the most helpful, high-signal reviews at the top of product pages. By automating this moderation, we ensure that "True Insight" is prioritized over "Junk," reducing manual review workload and improving the customer decision-making journey.
 
-## 📝 Project Overview
-In e-commerce, the sheer volume of reviews often leads to "information overload." This project provides a production-ready solution to **filter out junk reviews** (gibberish, profanity, spam) and **rank helpful reviews** using a Pairwise Comparison Machine Learning model.
+### The Business Problem: Review Noise
+E-commerce platforms often suffer from a high volume of low-effort feedback, spam, or meaningless comments that bury insightful customer experiences.
+* **The Impact:** Poor quality reviews lead to "information overload," lower customer trust, and increased bounce rates.
+* **The Goal:** Build a system that identifies high-quality reviews based on linguistic density and sentiment, effectively ranking helpful content above low-signal noise.
 
-### 💡 Key Value Proposition
-* **Business:** Improves Customer Experience and Conversion Rates (CVR) by surfacing high-quality information.
-* **Technical:** Solves the $O(n^2)$ complexity of pairwise comparisons using **Vectorized Cross-Joins** in Pandas.
+### Methodology: The Data Pipeline
+The project is structured into a modular pipeline (Preprocessing → Feature Engineering → Model Training → Deployment):
+
+1.  **Strict Linguistic Filtering:** Multi-stage cleaning using **Spacy** and custom logic to detect:
+    * **Gibberish & Profanity:** Specialized detection for English and Hinglish swear words.
+    * **Language Mismatch:** Filtering out non-target languages (e.g., Hindi/Marathi) using `langdetect`.
+    * **Noise Reduction:** Strict preprocessing reduced the dataset from 1,676 to 1,655 high-quality samples, effectively mitigating false positives in model training.
+2.  **Advanced Feature Engineering:** We developed a proprietary "Review Score" by synthesizing:
+    * **Sentiment Polarity:** Using **VADER** and **TextBlob** to quantify emotional tone.
+    * **Linguistic Richness:** Calculating noun-to-total-word ratios via **POS tagging** to prioritize descriptive, noun-heavy reviews.
+    * **Review Mechanics:** Analyzing review length, punctuation density, and spell-check thresholds.
+3.  **Predictive Modeling:** A **Random Forest** architecture was trained to classify and rank reviews, chosen for its ability to handle non-linear relationships between linguistic features and perceived "helpfulness."
+
+### Technical Skill Breakdown (Granular)
+* **Python Libraries:** `Pandas`, `NumPy`, `Scikit-learn`, `Joblib` (Model Persistence).
+* **NLP Frameworks:** `Spacy` (POS tagging & Lemmatization), `TextBlob`, `VADER`, `NLTK` (PorterStemming).
+* **Feature Extraction:** `TfidfVectorizer` with custom ngram ranges, sentiment score synthesis.
+* **Pipeline Engineering:** Developed `datapipeline.py` with `argparse` support for scalable, command-line execution.
+* **Exploratory Data Analysis (EDA):** Advanced automated profiling using `pandas_profiling` (YData-Profiling).
+
+### Actionable Business Recommendations
+* **Strategic Sorting:** Deploy the `review_score` output as the default "Sort by Helpful" view to increase "Add to Cart" conversion rates.
+* **Automated Moderation:** Use the gibberish and profanity filters as a "Pre-Publish" gate to prevent toxic content from reaching the live site.
+* **Product Insights:** Flag reviews with high sentiment but low helpfulness for the product team to identify where product descriptions may be confusing to customers.
+
+### Limitations & Next Steps
+* **Data Volume:** Currently trained on ~1.6k reviews; moving to a larger dataset would allow for Transformer-based (BERT) implementations.
+* **Cold-Start Problem:** New reviews lack historical "vote" data; adding a "freshness" weight to the ranking algorithm would help new, high-quality reviews gain traction faster.
+* **Multimodal Analysis:** Future iterations could incorporate Computer Vision to verify if a review includes an actual product photo, a major indicator of authenticity.
 
 ---
 
-## 🚀 Key Technical Challenges & Solutions
+### Installation & Usage
+1.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+2.  **Run the automated pipeline:**
+    ```bash
+    python datapipeline.py --file_name data/test.csv --model_path randomforest.joblib
+    ```
 
-### 1. Performance Optimization (The "N+1" Problem)
-**Challenge:** Comparing every review against every other review using nested loops was extremely slow.
-**Solution:** Refactored the ranking logic to use **Vectorized Cross-Joins** (`merge(how='cross')`). This leveraged NumPy's performance, reducing ranking time by **over 90%**.
-
-### 2. High-Signal Feature Engineering
-**Challenge:** Simple word counts don't equal quality. 
-**Solution:** Engineered a **Noun-Density Metric ($R_n$)**. Using **Spacy POS tagging**, I prioritized reviews that mentioned specific objects (features) over purely emotional adjectives.
-
-### 3. Data Integrity & Guard Clauses
-**Challenge:** Handling "dirty" real-world data like "Hinglish" profanity or keyboard-mash gibberish.
-**Solution:** Built a multi-stage filtering class in `utils.py` that checks for language, Markov-chain gibberish probability, and multi-lingual profanity before the ML model ever sees the data.
-
----
-
-## 📂 Repository Structure
-* `datapipeline.py`: The main execution script (Production-ready).
-* `utils.py`: Modularized `ReviewProcessor` class for NLP logic.
-* `notebooks/`: Step-by-step EDA, Feature Engineering, and Model Training.
-* `models/`: Pre-trained `randomforest.joblib` judge model.
-
-## 🛠️ Setup & Usage
-1. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   python -m spacy download en_core_web_sm
+### Repository Structure
+* `1. Data Analysis and Preprocessing.ipynb`: Initial EDA and strict data cleaning logic.
+* `2. Feature Engineering.ipynb`: Generation of linguistic and sentiment features.
+* `3. Model Training.ipynb`: Random Forest training and evaluation.
+* `datapipeline.py`: The production-ready script for ranking new reviews.
+* `utils.py`: Core logic for language detection, profanity filtering, and feature scoring.
